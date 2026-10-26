@@ -91,29 +91,6 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    @Transactional
-//    public TempleOrder createOrder(CreateOrderRequest request) {
-//        Offering offering = offeringRepository.findById(request.offeringId())
-//                .orElseThrow(() -> new IllegalArgumentException("Offering not found"));
-//
-//        if (!offering.isActive()) {
-//            throw new IllegalArgumentException("Offering is inactive");
-//        }
-//
-//        BigDecimal total = offering.getPrice()
-//                .multiply(BigDecimal.valueOf(request.quantity()));
-//
-//        TempleOrder order = new TempleOrder(
-//                request.devoteeName(),
-//                request.phoneNumber(),
-//                request.bookingDate(),
-//                offering.getId(),
-//                request.quantity(),
-//                total
-//        );
-//
-//        return orderRepository.save(order);
-//    }
 
 
     public TempleOrder getOrder(Long id) {
