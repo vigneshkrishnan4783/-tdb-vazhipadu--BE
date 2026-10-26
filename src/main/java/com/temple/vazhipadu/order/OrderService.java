@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class OrderService {
@@ -26,6 +27,7 @@ public class OrderService {
         this.orderRepository = orderRepository;
         this.offeringRepository = offeringRepository;
     }
+
     @Transactional
     public TempleOrder createOrder(CreateOrderRequest request) {
 
@@ -92,12 +94,21 @@ public class OrderService {
     }
 
 
-
+    @Transactional(readOnly = true)
     public TempleOrder getOrder(Long id) {
-        return orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
-    }
+        if (id == null || id <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid order ID"
+            );
+        }
 
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Order not found with ID: " + id
+                ));
+    }
     @Transactional(readOnly = true)
     public Page<TempleOrder> searchOrders(
             LocalDate bookingDate,
@@ -133,5 +144,74 @@ public class OrderService {
                 normalizedPhone,
                 pageable
         );
+    }
+    @Transactional(readOnly = true)
+    public DailyCollectionResponse getDailyCollection(
+            LocalDate bookingDate) {
+
+        List<DailyCollectionRow> rows =
+                orderRepository.getDailyCollection(
+                        bookingDate,
+                        OrderStatus.BOOKED
+                );
+
+        List<DailyCollectionResponse.OfferingCollection> offerings =
+                rows.stream()
+                        .map(row -> {
+                            Offering offering = offeringRepository
+                                    .findById(row.getOfferingId())
+                                    .orElseThrow(() ->
+                                            new ResponseStatusException(
+                                                    HttpStatus.NOT_FOUND,
+                                                    "Offering not found: "
+                                                            + row.getOfferingId()
+                                            )
+                                    );
+
+                            return new DailyCollectionResponse.OfferingCollection(
+                                    row.getOfferingId(),
+                                    offering.getName(),
+                                    row.getOrderCount(),
+                                    row.getTotalAmount()
+                            );
+                        })
+                        .toList();
+
+        BigDecimal totalAmount = offerings.stream()
+                .map(DailyCollectionResponse.OfferingCollection::totalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new DailyCollectionResponse(
+                bookingDate,
+                offerings,
+                totalAmount
+        );
+    }
+    @Transactional
+    public TempleOrder cancelOrder(Long id) {
+
+        TempleOrder order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Order not found: " + id
+                ));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Order is already cancelled"
+            );
+        }
+
+        if (order.getStatus() != OrderStatus.BOOKED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only booked orders can be cancelled"
+            );
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+
+        return orderRepository.save(order);
     }
 }

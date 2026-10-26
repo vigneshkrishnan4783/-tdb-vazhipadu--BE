@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface OrderRepository extends JpaRepository<TempleOrder, Long> {
 
@@ -40,15 +41,30 @@ public interface OrderRepository extends JpaRepository<TempleOrder, Long> {
             Pageable pageable
     );
 //booked quantity
-    @Query("""
+@Query("""
     SELECT COALESCE(SUM(o.quantity), 0)
     FROM TempleOrder o
     WHERE o.offeringId = :offeringId
       AND o.bookingDate = :bookingDate
       AND o.status = :status
     """)
-    long sumBookedQuantity(
-            @Param("offeringId") Long offeringId,
+long sumBookedQuantity(
+        @Param("offeringId") Long offeringId,
+        @Param("bookingDate") LocalDate bookingDate,
+        @Param("status") OrderStatus status
+);
+    @Query("""
+    SELECT
+        o.offeringId AS offeringId,
+        COUNT(o.id) AS orderCount,
+        COALESCE(SUM(o.totalAmount), 0) AS totalAmount
+    FROM TempleOrder o
+    WHERE o.bookingDate = :bookingDate
+      AND o.status = :status
+    GROUP BY o.offeringId
+    ORDER BY o.offeringId
+    """)
+    List<DailyCollectionRow> getDailyCollection(
             @Param("bookingDate") LocalDate bookingDate,
             @Param("status") OrderStatus status
     );
