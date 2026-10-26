@@ -32,6 +32,7 @@ public interface OrderRepository extends JpaRepository<TempleOrder, Long> {
                    OR o.phoneNumber = :phoneNumber)
             """
     )
+
     Page<TempleOrder> searchOrders(
             @Param("bookingDate") LocalDate bookingDate,
             @Param("status") OrderStatus status,
