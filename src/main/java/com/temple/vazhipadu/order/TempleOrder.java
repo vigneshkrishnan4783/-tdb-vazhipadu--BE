@@ -45,6 +45,13 @@ public class TempleOrder {
         this.quantity = quantity;
         this.totalAmount = totalAmount;
     }
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
 
     public Long getId() { return id; }
     public String getDevoteeName() { return devoteeName; }

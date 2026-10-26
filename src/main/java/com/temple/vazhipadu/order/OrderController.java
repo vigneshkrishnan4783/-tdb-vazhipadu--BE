@@ -49,4 +49,14 @@ public class OrderController {
                 size
         );
     }
+    @PatchMapping("/{id}/cancel")
+    public TempleOrder cancelOrder(@PathVariable Long id) {
+        return orderService.cancelOrder(id);
+    }
+
+    @GetMapping("/daily-collection")
+    public DailyCollectionResponse getDailyCollection(
+            @RequestParam LocalDate bookingDate) {
+        return orderService.getDailyCollection(bookingDate);
+    }
 }
